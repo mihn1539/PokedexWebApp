@@ -1,11 +1,11 @@
 {
-    "name": "avanze",
-    "short_name": "avanze",
+    "name": "Pokédex",
+    "short_name": "Pokédex",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Una Pokédex completa con información de todos los Pokémon.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
