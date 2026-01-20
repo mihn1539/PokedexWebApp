@@ -1,4 +1,5 @@
 [build]
+  base = "pokedex"
   publish = "build/web"
   command = """
     wget -q https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.24.0-stable.tar.xz &&
