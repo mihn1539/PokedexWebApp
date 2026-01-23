@@ -6,8 +6,9 @@ class PokemonFilters {
   String? type2; // Segundo tipo
   String? generation;
   String? color;
+  String? route; // Ruta o ubicación (solo disponible con filtro de generación)
 
-  PokemonFilters({this.type1, this.type2, this.generation, this.color});
+  PokemonFilters({this.type1, this.type2, this.generation, this.color, this.route});
 
   // Method to apply filters to a list of Pokemon
   List<Pokemon> applyFilters(List<Pokemon> pokemons) {
@@ -44,5 +45,6 @@ class PokemonFilters {
     type2 = null;
     generation = null;
     color = null;
+    route = null;
   }
 }

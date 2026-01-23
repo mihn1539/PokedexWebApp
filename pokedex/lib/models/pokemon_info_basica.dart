@@ -3,6 +3,7 @@ import 'package:pokedex/models/pokemon.dart';
 import 'package:pokedex/utils/pokemon_helpers.dart';
 import 'package:pokedex/utils/app_theme.dart';
 import 'package:pokedex/widgets/cached_pokemon_image.dart';
+import 'package:pokedex/widgets/type_badge.dart';
 
 class PokemonInfoBasica extends StatelessWidget {
   final Pokemon pokemon;
@@ -146,28 +147,11 @@ class PokemonInfoBasica extends StatelessWidget {
                       runSpacing: AppTheme.spacingSm,
                       alignment: WrapAlignment.center,
                       children: pokemon.tipos!.map((tipo) {
-                        return Container(
-                          decoration: BoxDecoration(
-                            color: theme.getPokemonTypeColor(tipo).withOpacity(0.15),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: theme.getPokemonTypeColor(tipo),
-                              width: 1.5,
-                            ),
-                          ),
-                          padding: const EdgeInsets.all(12),
-                          child: CachedPokemonImage(
-                            imageUrl: getTipoSpriteUrl(tipo),
-                            height: 40,
-                            fit: BoxFit.contain,
-                            errorWidget: Text(
-                              capitalizar(tipo),
-                              style: theme.bodyLarge!.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
+                        return TypeBadge(
+                          type: tipo,
+                          width: 100,
+                          height: 40,
+                          fontSize: 14,
                         );
                       }).toList(),
                     ),

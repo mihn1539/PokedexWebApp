@@ -3,6 +3,7 @@ import '../models/pokemon.dart';
 import '../utils/pokemon_helpers.dart';
 import '../utils/pokemon_stat_calculator.dart';
 import '../utils/screen_utils.dart';
+import 'type_badge.dart';
 
 class PokemonInfoCard extends StatelessWidget {
   final Pokemon pokemon;
@@ -58,14 +59,13 @@ class PokemonInfoCard extends StatelessWidget {
           ),
           if (pokemon.tipos != null)
             Wrap(
+              spacing: 4,
+              runSpacing: 4,
               children: pokemon.tipos!.map((tipo) {
-                return Padding(
-                  padding: const EdgeInsets.all(4.0),
-                  child: Image.network(
-                    getTipoSpriteUrl(tipo),
-                    height: 30,
-                    errorBuilder: (_, __, ___) => const Icon(Icons.error),
-                  ),
+                return TypeBadge(
+                  type: tipo,
+                  height: 30,
+                  fontSize: 12,
                 );
               }).toList(),
             ),

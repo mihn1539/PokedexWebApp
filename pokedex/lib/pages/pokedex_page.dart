@@ -40,11 +40,15 @@ class _PokedexPageState extends State<PokedexPage> {
   String? selectedType2Display;
   String? selectedGenerationDisplay;
   String? selectedColorDisplay;
+  String? selectedRouteDisplay;
+  List<String> availableLocations = [];
 
   // Caches para evitar repetir consultas pesadas
   final Map<String, Set<int>> _colorCache = {};
   final Map<String, Set<int>> _typeCache = {};
   final Map<String, Set<int>> _generationCache = {};
+  final Map<String, Set<int>> _routeCache = {};
+  final Map<String, List<String>> _locationsByGenerationCache = {};
 
   // función para obtener pokemon desde la pokeAPI o caché
   Future<void> cargarPokemons() async {
@@ -132,6 +136,82 @@ class _PokedexPageState extends State<PokedexPage> {
     return ids;
   }
 
+  // Obtener ids para ubicación/ruta (con cache)
+  Future<Set<int>> _fetchIdsForLocation(String locationArea) async {
+    if (_routeCache.containsKey(locationArea)) return _routeCache[locationArea]!;
+    final uri = Uri.parse('https://pokeapi.co/api/v2/location-area/$locationArea');
+    final resp = await http.get(uri);
+    if (resp.statusCode != 200) return {};
+    final data = jsonDecode(resp.body);
+    final List encounters = data['pokemon_encounters'] as List;
+    final Set<int> ids = encounters.map<int>((e) {
+      final url = e['pokemon']['url'] as String;
+      return int.parse(url.split('/')[6]);
+    }).toSet();
+    _routeCache[locationArea] = ids;
+    return ids;
+  }
+
+  // Obtener lista de ubicaciones para una generación (con cache)
+  Future<List<String>> _fetchLocationsForGeneration(String generationName) async {
+    if (_locationsByGenerationCache.containsKey(generationName)) {
+      return _locationsByGenerationCache[generationName]!;
+    }
+    final uri = Uri.parse('https://pokeapi.co/api/v2/generation/$generationName');
+    final resp = await http.get(uri);
+    if (resp.statusCode != 200) return [];
+    final data = jsonDecode(resp.body);
+    
+    // Obtener región principal
+    final mainRegion = data['main_region'];
+    if (mainRegion == null) return [];
+    
+    // Obtener ubicaciones de la región principal
+    List<String> allLocationAreas = [];
+    final regionUrl = mainRegion['url'] as String;
+    final regionResp = await http.get(Uri.parse(regionUrl));
+    if (regionResp.statusCode == 200) {
+      final regionData = jsonDecode(regionResp.body);
+      final List locations = regionData['locations'] as List;
+      
+      // Para cada ubicación, obtener sus áreas
+      for (var loc in locations) {
+        final locationUrl = loc['url'] as String;
+        final locResp = await http.get(Uri.parse(locationUrl));
+        if (locResp.statusCode == 200) {
+          final locData = jsonDecode(locResp.body);
+          final List areas = locData['areas'] as List;
+          for (var area in areas) {
+            allLocationAreas.add(area['name'] as String);
+          }
+        }
+      }
+    }
+    
+    _locationsByGenerationCache[generationName] = allLocationAreas;
+    return allLocationAreas;
+  }
+
+  // Precargar ubicaciones de todas las generaciones
+  Future<void> _preloadAllLocations() async {
+    final generations = [
+      'generation-i',
+      'generation-ii',
+      'generation-iii',
+      'generation-iv',
+      'generation-v',
+      'generation-vi',
+      'generation-vii',
+      'generation-viii',
+      'generation-ix',
+    ];
+
+    // Cargar en paralelo las ubicaciones de todas las generaciones
+    await Future.wait(
+      generations.map((gen) => _fetchLocationsForGeneration(gen)),
+    );
+  }
+
   // Aplica todos los filtros combinados: type, generation, region, legendary
   Future<void> _applyFilters() async {
     setState(() => cargando = true);
@@ -160,6 +240,12 @@ class _PokedexPageState extends State<PokedexPage> {
       // Color
       if (filtros.color != null) {
         final ids = await _fetchIdsForColor(filtros.color!);
+        resultIds = resultIds.intersection(ids);
+      }
+
+      // Ruta (solo si hay filtro de generación activo)
+      if (filtros.route != null && filtros.generation != null) {
+        final ids = await _fetchIdsForLocation(filtros.route!);
         resultIds = resultIds.intersection(ids);
       }
 
@@ -215,6 +301,7 @@ class _PokedexPageState extends State<PokedexPage> {
     selectedColorDisplay = 'Todos los colores';
     selectedGenerationDisplay = null;
     cargarPokemons(); // cargar los primeros pokemon al iniciar
+    _preloadAllLocations(); // precargar ubicaciones de todas las generaciones
     // asegurar que no haya filtro activo al inicio
     filtros.type1 = null;
     filtros.type2 = null;
@@ -242,7 +329,8 @@ class _PokedexPageState extends State<PokedexPage> {
     return (filtros.type1 != null) ||
         (filtros.type2 != null) ||
         (filtros.generation != null) ||
-        (filtros.color != null);
+        (filtros.color != null) ||
+        (filtros.route != null);
   }
 
   @override
@@ -315,6 +403,28 @@ class _PokedexPageState extends State<PokedexPage> {
                   ),
                 ),
                 const SizedBox(height: 16),
+                // Trivia diaria (solo si no hay búsqueda ni filtros activos y hay pokémon cargados)
+                if (_textController.text.isEmpty && !_filtersActive() && allPokemons.isNotEmpty)
+                  Card(
+                    elevation: 4,
+                    child: ExpansionTile(
+                      title: const Text(
+                        '¿Quién es ese Pokémon?',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      leading: const Icon(Icons.quiz),
+                      children: [
+                        DailyTriviaWidget(
+                          allPokemons: allPokemons,
+                        ),
+                      ],
+                    ),
+                  ),
+                if (_textController.text.isEmpty && !_filtersActive() && allPokemons.isNotEmpty)
+                  const SizedBox(height: 16),
                 // Widget de expansión para filtros
                 ExpansionTile(
                   title: const Text('Filtros'),
@@ -511,6 +621,13 @@ class _PokedexPageState extends State<PokedexPage> {
                               setState(() {
                                 selectedGenerationDisplay = newValue;
                                 filtros.generation = newValue;
+                                // Resetear ruta cuando cambia la generación
+                                selectedRouteDisplay = null;
+                                filtros.route = null;
+                                // Obtener ubicaciones del caché (ya precargadas)
+                                availableLocations = newValue != null
+                                    ? (_locationsByGenerationCache[newValue] ?? [])
+                                    : [];
                               });
                               _applyFilters();
                             },
@@ -565,6 +682,50 @@ class _PokedexPageState extends State<PokedexPage> {
                               _applyFilters();
                             },
                           ),
+
+                          const SizedBox(height: 8),
+
+                          // Filtro de Ruta (solo habilitado cuando hay generación seleccionada)
+                          DropdownButtonFormField<String>(
+                            decoration: InputDecoration(
+                              labelText: 'Ruta/Ubicación',
+                              border: const OutlineInputBorder(),
+                              enabled: filtros.generation != null && availableLocations.isNotEmpty,
+                              helperText: filtros.generation == null
+                                  ? 'Selecciona una generación primero'
+                                  : availableLocations.isEmpty
+                                      ? 'Cargando ubicaciones...'
+                                      : null,
+                            ),
+                            value: filtros.route,
+                            items: [
+                              const DropdownMenuItem<String>(
+                                value: null,
+                                child: Text('Todas las ubicaciones'),
+                              ),
+                              ...availableLocations.map((location) {
+                                final displayName = location.replaceAll('-', ' ');
+                                return DropdownMenuItem<String>(
+                                  value: location,
+                                  child: Text(
+                                    displayName.length > 1
+                                        ? displayName[0].toUpperCase() + displayName.substring(1)
+                                        : displayName.toUpperCase(),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                );
+                              }),
+                            ],
+                            onChanged: (filtros.generation != null && availableLocations.isNotEmpty)
+                                ? (String? newValue) {
+                                    setState(() {
+                                      selectedRouteDisplay = newValue;
+                                      filtros.route = newValue;
+                                    });
+                                    _applyFilters();
+                                  }
+                                : null,
+                          ),
                         ],
                       ),
                     ),
@@ -579,6 +740,8 @@ class _PokedexPageState extends State<PokedexPage> {
                             selectedType2Display = 'Tipo 2';
                             selectedColorDisplay = 'Todos los colores';
                             selectedGenerationDisplay = null;
+                            selectedRouteDisplay = null;
+                            availableLocations = [];
                             // Resetear los filtros
                             filtros.resetFilters();
                           });
@@ -612,31 +775,6 @@ class _PokedexPageState extends State<PokedexPage> {
                         controller: _scrollController,
                         physics: const BouncingScrollPhysics(),
                         slivers: [
-                          // Trivia diaria al inicio (solo si no hay búsqueda ni filtros activos y hay pokémon cargados)
-                          if (_textController.text.isEmpty && !_filtersActive() && allPokemons.isNotEmpty)
-                            SliverToBoxAdapter(
-                              child: Padding(
-                                padding: const EdgeInsets.all(16.0),
-                                child: Card(
-                                  elevation: 4,
-                                  child: ExpansionTile(
-                                    title: const Text(
-                                      '¿Quién es ese Pokémon?',
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    leading: const Icon(Icons.quiz),
-                                    children: [
-                                      DailyTriviaWidget(
-                                        allPokemons: allPokemons,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
                           // Grid de Pokémon
                           SliverGrid(
                             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(

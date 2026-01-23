@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:pokedex/models/pokemon.dart';
 import 'package:pokedex/utils/pokemon_helpers.dart';
 import 'package:pokedex/utils/app_theme.dart';
-import 'package:pokedex/widgets/cached_pokemon_image.dart';
+import 'package:pokedex/widgets/type_badge.dart';
 
 class PokemonCombateInfo extends StatelessWidget {
   final Pokemon pokemon;
@@ -27,35 +27,10 @@ class PokemonCombateInfo extends StatelessWidget {
           spacing: 6,
           runSpacing: 6,
           children: tipos.map((tipo) {
-            return Container(
-              decoration: BoxDecoration(
-                color: theme.getPokemonTypeColor(tipo).withOpacity(0.15),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: theme.getPokemonTypeColor(tipo),
-                  width: 1.5,
-                ),
-              ),
-              padding: const EdgeInsets.all(6),
-              child: CachedPokemonImage(
-                imageUrl: getTipoSpriteUrl(tipo),
-                height: 32,
-                fit: BoxFit.contain,
-                errorWidget: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
-                  ),
-                  child: Text(
-                    capitalizar(tipo),
-                    style: theme.bodyMedium!.copyWith(
-                      color: theme.getPokemonTypeColor(tipo),
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-              ),
+            return TypeBadge(
+              type: tipo,
+              height: 32,
+              fontSize: 12,
             );
           }).toList(),
         ),

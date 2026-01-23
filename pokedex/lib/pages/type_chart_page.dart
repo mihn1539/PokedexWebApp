@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:pokedex/utils/translation_helpers.dart';
 import 'package:pokedex/utils/app_theme.dart';
 import 'package:pokedex/widgets/menu_lateral.dart';
+import 'package:pokedex/widgets/type_badge.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -33,30 +34,6 @@ class _TypeChartPageState extends State<TypeChartPage> {
   void initState() {
     super.initState();
     _preloadAllTypes();
-  }
-
-  // Colores para cada tipo
-  Map<String, Color> getTypeColors() {
-    return {
-      'normal': const Color(0xFFA8A878),
-      'fire': const Color(0xFFF08030),
-      'water': const Color(0xFF6890F0),
-      'grass': const Color(0xFF78C850),
-      'electric': const Color(0xFFF8D030),
-      'ice': const Color(0xFF98D8D8),
-      'fighting': const Color(0xFFC03028),
-      'poison': const Color(0xFFA040A0),
-      'ground': const Color(0xFFE0C068),
-      'flying': const Color(0xFFA890F0),
-      'psychic': const Color(0xFFF85888),
-      'bug': const Color(0xFFA8B820),
-      'rock': const Color(0xFFB8A038),
-      'ghost': const Color(0xFF705898),
-      'dragon': const Color(0xFF7038F8),
-      'dark': const Color(0xFF705848),
-      'steel': const Color(0xFFB8B8D0),
-      'fairy': const Color(0xFFEE99AC),
-    };
   }
 
   /// Pre-carga todos los tipos en paralelo al inicio
@@ -158,7 +135,6 @@ class _TypeChartPageState extends State<TypeChartPage> {
   @override
   Widget build(BuildContext context) {
     final theme = AppTheme.of(context);
-    final typeColors = getTypeColors();
 
     return Scaffold(
       appBar: AppBar(
@@ -208,7 +184,7 @@ class _TypeChartPageState extends State<TypeChartPage> {
                       const SizedBox(height: 16),
                       
                       // Desplegable de tipos
-                      _buildTypeDropdown(typeColors, theme),
+                      _buildTypeDropdown(theme),
                     ],
                   ),
                 ),
@@ -239,7 +215,7 @@ class _TypeChartPageState extends State<TypeChartPage> {
                               ),
                             )
                           else if (typeData != null)
-                            _buildTypeDetails(typeColors, theme),
+                            _buildTypeDetails(theme),
                         ],
                       ],
                     ),
@@ -251,7 +227,7 @@ class _TypeChartPageState extends State<TypeChartPage> {
   }
 
   /// Construye el desplegable de tipos
-  Widget _buildTypeDropdown(Map<String, Color> typeColors, AppTheme theme) {
+  Widget _buildTypeDropdown(AppTheme theme) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -280,36 +256,15 @@ class _TypeChartPageState extends State<TypeChartPage> {
           items: allTypes.map((String type) {
             return DropdownMenuItem<String>(
               value: type,
-              child: Row(
-                children: [
-                  Container(
-                    width: 100,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: typeColors[type],
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Text(
-                      traducirTipo(type),
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                        shadows: [
-                          Shadow(
-                            offset: Offset(1, 1),
-                            blurRadius: 2,
-                            color: Colors.black45,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: TypeBadge(
+                  type: type,
+                  maxWidth: 90,
+                  fontSize: 13,
+                  height: 32,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                ),
               ),
             );
           }).toList(),
@@ -324,7 +279,7 @@ class _TypeChartPageState extends State<TypeChartPage> {
   }
 
   /// Construye los detalles del tipo seleccionado
-  Widget _buildTypeDetails(Map<String, Color> typeColors, AppTheme theme) {
+  Widget _buildTypeDetails(AppTheme theme) {
     final damageRelations = typeData!['damage_relations'];
     
     return Column(
@@ -335,7 +290,6 @@ class _TypeChartPageState extends State<TypeChartPage> {
           types: (damageRelations['double_damage_to'] as List)
               .map((e) => e['name'] as String)
               .toList(),
-          typeColors: typeColors,
           color: Colors.green,
           theme: theme,
         ),
@@ -348,7 +302,6 @@ class _TypeChartPageState extends State<TypeChartPage> {
           types: (damageRelations['half_damage_to'] as List)
               .map((e) => e['name'] as String)
               .toList(),
-          typeColors: typeColors,
           color: Colors.orange,
           theme: theme,
         ),
@@ -361,7 +314,6 @@ class _TypeChartPageState extends State<TypeChartPage> {
           types: (damageRelations['no_damage_to'] as List)
               .map((e) => e['name'] as String)
               .toList(),
-          typeColors: typeColors,
           color: Colors.grey,
           theme: theme,
         ),
@@ -378,7 +330,6 @@ class _TypeChartPageState extends State<TypeChartPage> {
           types: (damageRelations['half_damage_from'] as List)
               .map((e) => e['name'] as String)
               .toList(),
-          typeColors: typeColors,
           color: Colors.blue,
           theme: theme,
         ),
@@ -391,7 +342,6 @@ class _TypeChartPageState extends State<TypeChartPage> {
           types: (damageRelations['double_damage_from'] as List)
               .map((e) => e['name'] as String)
               .toList(),
-          typeColors: typeColors,
           color: Colors.red,
           theme: theme,
         ),
@@ -404,7 +354,6 @@ class _TypeChartPageState extends State<TypeChartPage> {
           types: (damageRelations['no_damage_from'] as List)
               .map((e) => e['name'] as String)
               .toList(),
-          typeColors: typeColors,
           color: Colors.purple,
           theme: theme,
         ),
@@ -416,7 +365,6 @@ class _TypeChartPageState extends State<TypeChartPage> {
   Widget _buildRelationSection({
     required String title,
     required List<String> types,
-    required Map<String, Color> typeColors,
     required Color color,
     required AppTheme theme,
   }) {
@@ -468,30 +416,9 @@ class _TypeChartPageState extends State<TypeChartPage> {
               spacing: 8,
               runSpacing: 8,
               children: types.map((type) {
-                return Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: typeColors[type],
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Text(
-                    traducirTipo(type),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                      shadows: [
-                        Shadow(
-                          offset: Offset(1, 1),
-                          blurRadius: 2,
-                          color: Colors.black45,
-                        ),
-                      ],
-                    ),
-                  ),
+                return TypeBadge(
+                  type: type,
+                  fontSize: 12,
                 );
               }).toList(),
             ),
