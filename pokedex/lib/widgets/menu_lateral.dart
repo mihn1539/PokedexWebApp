@@ -7,6 +7,7 @@ import 'package:pokedex/pages/favorites_page.dart';
 import 'package:pokedex/utils/app_theme.dart';
 import 'package:pokedex/pages/buscador_movimientos.dart';
 import 'package:pokedex/pages/type_chart_page.dart';
+import 'package:pokedex/pages/gym_leaders_page.dart';
 
 class MenuLateral extends StatelessWidget {
   const MenuLateral({super.key});
@@ -14,7 +15,7 @@ class MenuLateral extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = AppTheme.of(context);
-    
+
     // Construcción del Drawer (menú lateral)
     return Drawer(
       semanticLabel: 'Menú lateral de navegación',
@@ -62,7 +63,9 @@ class MenuLateral extends StatelessWidget {
                   title: const Text('Pokédex'),
                   onTap: () {
                     Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute(builder: (context) => const PokedexPage()),
+                      MaterialPageRoute(
+                        builder: (context) => const PokedexPage(),
+                      ),
                       (route) => false,
                     );
                   },
@@ -91,7 +94,7 @@ class MenuLateral extends StatelessWidget {
                         builder: (context) => BuscadorMovimientos(),
                       ),
                     );
-                  }
+                  },
                 ),
                 ListTile(
                   leading: Icon(Icons.table_chart, color: theme.primary),
@@ -104,7 +107,20 @@ class MenuLateral extends StatelessWidget {
                         builder: (context) => const TypeChartPage(),
                       ),
                     );
-                  }
+                  },
+                ),
+                ListTile(
+                  leading: Icon(Icons.military_tech, color: theme.primary),
+                  title: const Text('Líderes de Gimnasio'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const GymLeadersPage(),
+                      ),
+                    );
+                  },
                 ),
                 Divider(height: 1, color: theme.onSurface.withOpacity(0.24)),
                 ListTile(
@@ -130,15 +146,17 @@ class MenuLateral extends StatelessWidget {
                     if (allPokemons.isEmpty) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('Cargando Pokémon... Intenta de nuevo en un momento'),
+                          content: Text(
+                            'Cargando Pokémon... Intenta de nuevo en un momento',
+                          ),
                         ),
                       );
-                      
                     } else {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => PokeGridGame(pokedex: allPokemons),
+                          builder: (context) =>
+                              PokeGridGame(pokedex: allPokemons),
                         ),
                       );
                     }
